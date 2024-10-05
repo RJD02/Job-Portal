@@ -1,0 +1,6 @@
+Task 		---- 		Status
+
+admin login			Done
+change password			X
+forget password			X
+details				X
