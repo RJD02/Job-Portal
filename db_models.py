@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean,Column,Integer,String
+from sqlalchemy import Boolean,Column,Integer,String,TIMESTAMP, Text
 from database import Base
 from sqlalchemy import LargeBinary
 
@@ -8,6 +8,8 @@ class admin(Base):
     id = Column(Integer,primary_key=True)
     username = Column(String(100),unique=True)
     password = Column(String(500))
+    token = Column(Text)
+    expiry = Column(TIMESTAMP)
 
 class CompanyDetails(Base):
     __tablename__ = 'details'
