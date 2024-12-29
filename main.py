@@ -1,6 +1,6 @@
 from functools import wraps
 from typing import Annotated, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import jwt
 
 from fastapi import FastAPI, HTTPException, Depends, status
@@ -67,10 +67,26 @@ def requires_authentication():
         return wrapper
     return decorator
 
-@app.post("/")
-async def home():
-    return {"reached": "home"}
+#isactive or inactive function
+def is_active(company: db_models.CompanyDetails) -> bool:
+    # If inactive_date is None or it is in the future, it's still active
+    if company.inactive_date is None or company.inactive_date >= date.today():
+        return True
+    return False
 
+@app.post("/")
+async def home(db: Session = Depends(get_db)):
+    # Query all company details from the database
+    company_details = db.query(db_models.CompanyDetails).all()
+
+    # Filter active companies using the is_active function
+    active_companies = [company for company in company_details if is_active(company)]
+
+    # Convert the active result into a list of dictionaries (or any other serializable format)
+    result = [{"id": company.id, "company": company.company, "designation": company.designation,
+               "description": company.description, "image": company.image,"application": company.application} for company in active_companies]
+
+    return {"company_details": result}
 @app.post("/add_admin")
 async def admin_addition(data: login_data, db: db_dependency):
     try:
@@ -112,21 +128,81 @@ async def login(creds: login_data, db: db_dependency):
 
     raise HTTPException(status_code=403, detail="Wrong password")
 
+
+@app.put("/update/{company_id}")
+@requires_authentication()
+async def update_details(company_id: int, token: str,company_data: detailing, db: Session = Depends(get_db)):
+    try:
+            # Get the company record by ID
+            company = db.query(db_models.CompanyDetails).filter(db_models.CompanyDetails.id == company_id).first()
+            # print("company")
+            print(company)
+            if not company:
+                raise HTTPException(status_code=404, detail="Company not found")
+
+            # Update fields from company_data (no need to manually extract them)
+            # inactive_date = required_detail.inactive_date or (date.today() + timedelta(days=10))
+            company.company = company_data.company
+            company.designation = company_data.designation
+            company.description = company_data.description
+            company.image = company_data.image
+            company.updated_date = company_data.updated_date
+            company.inactive_date = company_data.inactive_date or (date.today() + timedelta(days=10))
+            company.application = company_data.application
+            company.salary = company_data.salary or ("NA")
+
+            # Commit the changes
+            db.commit()
+
+            data = {
+                "company": company_data.company,
+                "designation": company_data.designation,
+                "description": company_data.description,
+                "file_path": company_data.image,
+                "update_date": company_data.updated_date,
+                "inactive_data": company.inactive_date,
+                "application": company_data.application,
+                "salary": company.salary
+
+            }
+
+            # Return the updated company details as response
+            return DataSetOut(status_code=200,details=data)
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 @app.post("/details")
 @requires_authentication()
-async def upload_details(creds: login_data, required_detail: detailing, token: str, db: db_dependency):
-    db_details = db_models.CompanyDetails(**required_detail.dict())
-    db.add(db_details)
-    db.commit()
+async def upload_details(required_detail: detailing, db: db_dependency,token: str):
+    try:
+        inactive_date = required_detail.inactive_date or (date.today() + timedelta(days=10))
+        salary = required_detail.salary or ("NA")
+        # Create the db model object
+        required_detail.inactive_date = inactive_date
+        db_details = db_models.CompanyDetails(**required_detail.dict())
 
-    data = {
-        "company": required_detail.company,
-        "designation": required_detail.designation,
-        "description": required_detail.description,
-        "file_path": required_detail.image
-    }
-    return DataSetOut(status_code=200, details=data)
+        # Add to the database
+        db.add(db_details)
+        db.commit()
 
+        # Prepare the response data
+        data = {
+            "company": required_detail.company,
+            "designation": required_detail.designation,
+            "description": required_detail.description,
+            "file_path": required_detail.image,
+            "updated_date": date.today(),
+            "inactive_date": inactive_date,
+            "application": required_detail.application,
+            "salary": salary
+        }
+
+        # Return the response with status code 200
+        return DataSetOut(status_code=200, details=data)
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=403, detail=str(e))
 if __name__ == '__main__':
     # app.run(host='0.0.0.0', port=5000)
-    uvicorn.run(app="main2:app", host="0.0.0.0", port=5000, reload=True)
+    uvicorn.run(app="main:app", host="0.0.0.0", port=5000, reload=True)
