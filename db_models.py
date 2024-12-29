@@ -1,7 +1,5 @@
-from sqlalchemy import Boolean,Column,Integer,String,TIMESTAMP, Text
+from sqlalchemy import Column,Integer,String,TIMESTAMP, Text, DATE
 from database import Base
-from sqlalchemy import LargeBinary
-
 class admin(Base):
     __tablename__ = 'admin_table'
 
@@ -19,3 +17,8 @@ class CompanyDetails(Base):
     designation = Column(String(100))
     description= Column(String)
     image = Column(String)
+    updated_date = Column(DATE, default="CURRENT_DATE")  # Defaults to current date
+    inactive_date = Column(DATE)  # This can be NULL
+    application = Column(String(150))
+    salary = Column(String(20))
+
