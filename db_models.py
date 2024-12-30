@@ -21,4 +21,5 @@ class CompanyDetails(Base):
     inactive_date = Column(DATE)  # This can be NULL
     application = Column(String(150))
     salary = Column(String(20))
+    batch = Column(String(25))
 

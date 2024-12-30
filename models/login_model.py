@@ -15,6 +15,7 @@ class detailing(BaseModel):
     inactive_date: Union[None,date]
     application: str
     salary: Union[None,str]
+    batch: Union[None,str]
 
 class DataSetOut(BaseModel):
     status_code: int

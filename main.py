@@ -150,6 +150,7 @@ async def update_details(company_id: int, token: str,company_data: detailing, db
             company.inactive_date = company_data.inactive_date or (date.today() + timedelta(days=10))
             company.application = company_data.application
             company.salary = company_data.salary or ("NA")
+            company.batch = company_data.batch
 
             # Commit the changes
             db.commit()
@@ -162,7 +163,8 @@ async def update_details(company_id: int, token: str,company_data: detailing, db
                 "update_date": company_data.updated_date,
                 "inactive_data": company.inactive_date,
                 "application": company_data.application,
-                "salary": company.salary
+                "salary": company.salary,
+                "batch": company_data.batch
 
             }
 
@@ -194,7 +196,8 @@ async def upload_details(required_detail: detailing, db: db_dependency,token: st
             "updated_date": date.today(),
             "inactive_date": inactive_date,
             "application": required_detail.application,
-            "salary": salary
+            "salary": salary,
+            "batch": required_detail.batch
         }
 
         # Return the response with status code 200
