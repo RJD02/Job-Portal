@@ -208,4 +208,4 @@ async def upload_details(required_detail: detailing, db: db_dependency,token: st
         raise HTTPException(status_code=403, detail=str(e))
 if __name__ == '__main__':
     # app.run(host='0.0.0.0', port=5000)
-    uvicorn.run(app="main:app", host="0.0.0.0", port=5000, reload=True)
+    uvicorn.run(app="main:app", host="", port=os.getenv("port"), reload=True)
